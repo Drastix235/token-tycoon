@@ -104,6 +104,7 @@ function newState() {
     stock: 0,
     training: 0,
     modelIndex: 0,
+    bestModel: 0,
     trainShare: 0,
     earnedThisRun: 0,
     allTimeEarned: 0,
@@ -122,24 +123,28 @@ function newState() {
   };
 }
 
+// Turns raw save data (local or cloud) into a valid, up-to-date state
+function normalize(data) {
+  const base = newState();
+  const merged = { ...base, ...data, infra: { ...base.infra }, clients: { ...base.clients } };
+  // Stay compatible with saves made before new content was added
+  for (const b of INFRA) {
+    if (data.infra && data.infra[b.id]) merged.infra[b.id] = { ...base.infra[b.id], ...data.infra[b.id] };
+  }
+  for (const c of CLIENTS) {
+    if (data.clients && data.clients[c.id]) merged.clients[c.id] = { ...base.clients[c.id], ...data.clients[c.id] };
+  }
+  merged.upgrades = (data.upgrades || []).filter(id => UPGRADE_BY_ID[id]);
+  merged.modelIndex = Math.min(merged.modelIndex, MODELS.length - 1);
+  merged.bestModel = Math.max(merged.bestModel || 0, merged.modelIndex);
+  if (merged.labName === 'Mon labo IA') merged.labName = DEFAULT_LAB_NAME; // old French default
+  return merged;
+}
+
 function load() {
   try {
     const raw = localStorage.getItem(SAVE_KEY);
-    if (!raw) return null;
-    const data = JSON.parse(raw);
-    const base = newState();
-    const merged = { ...base, ...data, infra: { ...base.infra }, clients: { ...base.clients } };
-    // Stay compatible with saves made before new content was added
-    for (const b of INFRA) {
-      if (data.infra && data.infra[b.id]) merged.infra[b.id] = { ...base.infra[b.id], ...data.infra[b.id] };
-    }
-    for (const c of CLIENTS) {
-      if (data.clients && data.clients[c.id]) merged.clients[c.id] = { ...base.clients[c.id], ...data.clients[c.id] };
-    }
-    merged.upgrades = (data.upgrades || []).filter(id => UPGRADE_BY_ID[id]);
-    merged.modelIndex = Math.min(merged.modelIndex, MODELS.length - 1);
-    if (merged.labName === 'Mon labo IA') merged.labName = DEFAULT_LAB_NAME; // old French default
-    return merged;
+    return raw ? normalize(JSON.parse(raw)) : null;
   } catch (e) {
     return null;
   }
@@ -258,6 +263,7 @@ function train(tokens) {
   while (next && state.training >= next.cost) {
     state.training -= next.cost;
     state.modelIndex++;
+    state.bestModel = Math.max(state.bestModel, state.modelIndex);
     toast(`🧠 New model "${next.name}" released! Your token price doubles`);
     next = nextModel();
   }
@@ -332,7 +338,7 @@ function prestige() {
     confirmText: 'Raise funds',
     onConfirm: () => {
       const next = newState();
-      for (const key of ['labName', 'allTimeEarned', 'tokensProduced', 'tokensSold', 'playTime', 'buyMode']) {
+      for (const key of ['labName', 'allTimeEarned', 'bestModel', 'tokensProduced', 'tokensSold', 'playTime', 'buyMode']) {
         next[key] = state[key];
       }
       next.investors = state.investors + gain;
@@ -509,35 +515,36 @@ function buildInfra() {
   }
 }
 
-function buildPanel() {
-  const clients = $('#tab-clients');
-  clients.innerHTML = '<p class="note">Your customers buy tokens every second. Without customers, your tokens just pile up in stock.</p>';
+function buildLists() {
   for (const c of CLIENTS) {
     const r = row(c.icon, '', '', () => buyClient(c));
     ui.clients[c.id] = r;
-    clients.appendChild(r.row);
+    $('#clientsList').appendChild(r.row);
   }
-  const hint = document.createElement('p');
-  hint.className = 'locked-hint';
-  hint.id = 'clientsHint';
-  clients.appendChild(hint);
 
-  const team = $('#tab-team');
-  team.innerHTML = '<p class="note">An SRE engineer restarts machines automatically, even while the game is closed.</p>';
   for (const b of INFRA) {
     const r = row(b.icon, `SRE engineer: ${b.name}`, 'Automates production', () => hireManager(b));
     ui.managers[b.id] = r;
-    team.appendChild(r.row);
+    $('#teamList').appendChild(r.row);
   }
 
-  const research = $('#tab-research');
-  research.innerHTML = '<p class="note" id="upgradeCount"></p>';
   for (const u of UPGRADES) {
     const r = row(u.icon, u.name, u.desc, () => buyUpgrade(u));
     r.btn.textContent = money(u.cost);
     ui.upgrades[u.id] = r;
-    research.appendChild(r.row);
+    $('#researchList').appendChild(r.row);
   }
+
+  ui.models = MODELS.map((m, i) => {
+    const el = document.createElement('div');
+    el.className = 'row';
+    el.innerHTML = `
+      <span class="row-icon">🧠</span>
+      <div class="row-text"><strong>${m.name}</strong><small>Token price x${m.mult}${i ? ` · ${fmt(m.cost)} tokens to train` : ''}</small></div>
+      <span class="status"></span>`;
+    $('#modelsList').appendChild(el);
+    return { row: el, status: el.querySelector('.status') };
+  });
 }
 
 function renderHeader() {
@@ -575,18 +582,23 @@ function renderControl() {
   if (box.textContent !== msg) box.textContent = msg;
   box.classList.toggle('warn', warn);
 
+  // Dots on tabs point the player to the bottleneck
+  $('#dot-infra').classList.toggle('on', fill <= 0.98 && effective < demand * 0.8);
+  $('#dot-clients').classList.toggle('on', fill > 0.98 || effective > demand * 1.5);
+
   const model = MODELS[state.modelIndex];
   const next = nextModel();
+  const pct = next ? Math.min(1, state.training / next.cost) : 1;
   $('#modelName').textContent = model.name;
   $('#modelMult').textContent = `price x${model.mult}`;
+  $('#trainBar').style.width = `${(pct * 100).toFixed(1)}%`;
+  $('#trainMiniBar').style.width = `${(pct * 100).toFixed(1)}%`;
+  $('#trainMini').textContent = next ? `${Math.floor(pct * 100)}% → ${next.name}` : 'Done 🏆';
   if (next) {
-    const pct = Math.min(1, state.training / next.cost);
     $('#nextModel').textContent = `Next: ${next.name}`;
-    $('#trainBar').style.width = `${(pct * 100).toFixed(1)}%`;
     $('#trainText').textContent = `${fmt(state.training)} / ${fmt(next.cost)} tokens`;
   } else {
     $('#nextModel').textContent = 'Ultimate model reached 🏆';
-    $('#trainBar').style.width = '100%';
     $('#trainText').textContent = 'Training complete';
   }
   $('#trainShareValue').textContent = `${Math.round(state.trainShare * 100)}%`;
@@ -666,7 +678,18 @@ function refreshPanel() {
     ? `🔒 ${lockedHidden} more customer type${lockedHidden > 1 ? 's' : ''} to discover…`
     : '';
 
+  // Models roadmap
+  ui.models.forEach(({ row: el, status }, i) => {
+    const done = i < state.modelIndex;
+    const current = i === state.modelIndex;
+    el.classList.toggle('done', done);
+    el.classList.toggle('current', current);
+    el.classList.toggle('locked', i > state.modelIndex);
+    status.textContent = done ? '✅ Trained' : current ? '⭐ In use' : i === state.modelIndex + 1 ? '⏳ Training' : '🔒';
+  });
+
   // Team
+  let managerAffordable = false;
   for (const b of INFRA) {
     const s = infraOf(b);
     const { row: el, btn } = ui.managers[b.id];
@@ -677,18 +700,23 @@ function refreshPanel() {
     } else {
       btn.textContent = s.owned ? money(b.managerCost) : `🔒 ${money(b.managerCost)}`;
       btn.disabled = !s.owned || state.money < b.managerCost;
+      if (!btn.disabled) managerAffordable = true;
     }
   }
+  $('#dot-team').classList.toggle('on', managerAffordable);
 
   // Research
   let shown = 0;
+  let upgradeAffordable = false;
   for (const u of UPGRADES) {
     const { row: el, btn } = ui.upgrades[u.id];
     const bought = state.upgrades.includes(u.id);
     el.hidden = bought || shown >= UPGRADES_SHOWN;
     if (!el.hidden) shown++;
     btn.disabled = state.money < u.cost;
+    if (!bought && !btn.disabled) upgradeAffordable = true;
   }
+  $('#dot-research').classList.toggle('on', upgradeAffordable);
   $('#upgradeCount').textContent =
     `${state.upgrades.length} / ${UPGRADES.length} research projects completed. They multiply your production or demand.`;
 
@@ -700,6 +728,7 @@ function refreshPanel() {
   $('#invClaimable').textContent = fmt(claim);
   $('#invNext').textContent = money(nextAt - state.allTimeEarned);
   $('#prestigeBtn').disabled = claim < 1;
+  $('#dot-investors').classList.toggle('on', claim >= 1);
   $('#prestigeBtn').textContent = claim >= 1 ? `Raise funds (+${fmt(claim)} investors)` : 'Raise funds';
 
   // Stats
@@ -707,6 +736,7 @@ function refreshPanel() {
   for (const b of INFRA) owned += infraOf(b).owned;
   $('#stEarned').textContent = money(state.earnedThisRun);
   $('#stAllTime').textContent = money(state.allTimeEarned);
+  $('#stBestModel').textContent = MODELS[state.bestModel].name;
   $('#stProduced').textContent = fmt(state.tokensProduced);
   $('#stSold').textContent = fmt(state.tokensSold);
   $('#stOwned').textContent = fmt(owned);
@@ -721,7 +751,7 @@ function syncControls() {
   $('#trainShare').value = Math.round(state.trainShare * 100);
   $('#labInput').value = state.labName;
   $('#labName').textContent = state.labName;
-  for (const btn of document.querySelectorAll('#buyMode button')) {
+  for (const btn of document.querySelectorAll('.buy-mode button')) {
     btn.classList.toggle('active', btn.dataset.mode === state.buyMode);
   }
 }
@@ -740,15 +770,24 @@ function toast(text) {
 /* ---------- Modal ---------- */
 
 let modalConfirm = null;
+let modalCancel = null;
+let modalLocked = false;
 
-function showModal({ title, body, confirmText = 'OK', onConfirm = null, hideCancel = false, danger = false }) {
+// locked: the modal can only be closed with its buttons (no Escape / backdrop click)
+function showModal({
+  title, body, confirmText = 'OK', cancelText = 'Cancel',
+  onConfirm = null, onCancel = null, hideCancel = false, danger = false, locked = false,
+}) {
   $('#modalTitle').textContent = title;
   $('#modalBody').innerHTML = body;
   const confirm = $('#modalConfirm');
   confirm.textContent = confirmText;
   confirm.classList.toggle('danger', danger);
+  $('#modalCancel').textContent = cancelText;
   $('#modalCancel').hidden = hideCancel;
   modalConfirm = onConfirm;
+  modalCancel = onCancel;
+  modalLocked = locked;
   $('#modal').hidden = false;
   confirm.focus();
 }
@@ -756,29 +795,40 @@ function showModal({ title, body, confirmText = 'OK', onConfirm = null, hideCanc
 function closeModal() {
   $('#modal').hidden = true;
   modalConfirm = null;
+  modalCancel = null;
+  modalLocked = false;
+}
+
+/* ---------- Tabs ---------- */
+
+function openTab(tab) {
+  for (const btn of document.querySelectorAll('#tabs button')) {
+    btn.classList.toggle('active', btn.dataset.tab === tab);
+  }
+  for (const panel of document.querySelectorAll('.tab-content')) {
+    panel.hidden = panel.id !== `tab-${tab}`;
+  }
+  document.dispatchEvent(new CustomEvent('tt:tab', { detail: tab }));
 }
 
 /* ---------- Events ---------- */
 
 function bindEvents() {
-  $('#buyMode').addEventListener('click', e => {
-    const mode = e.target.dataset.mode;
-    if (!mode) return;
-    state.buyMode = mode;
-    syncControls();
-    refreshPanel();
-  });
+  for (const group of document.querySelectorAll('.buy-mode')) {
+    group.addEventListener('click', e => {
+      const btn = e.target.closest('button');
+      if (!btn) return;
+      state.buyMode = btn.dataset.mode;
+      syncControls();
+      refreshPanel();
+    });
+  }
 
   $('#tabs').addEventListener('click', e => {
-    const tab = e.target.dataset.tab;
-    if (!tab) return;
-    for (const btn of document.querySelectorAll('#tabs button')) {
-      btn.classList.toggle('active', btn.dataset.tab === tab);
-    }
-    for (const panel of document.querySelectorAll('.tab-content')) {
-      panel.hidden = panel.id !== `tab-${tab}`;
-    }
+    const btn = e.target.closest('button');
+    if (btn) openTab(btn.dataset.tab);
   });
+  $('#accountBtn').addEventListener('click', () => openTab('profile'));
 
   $('#trainShare').addEventListener('input', e => {
     state.trainShare = Number(e.target.value) / 100;
@@ -798,9 +848,15 @@ function bindEvents() {
     closeModal();
     if (fn) fn();
   });
-  $('#modalCancel').addEventListener('click', closeModal);
-  $('#modal').addEventListener('click', e => { if (e.target.id === 'modal') closeModal(); });
-  document.addEventListener('keydown', e => { if (e.key === 'Escape' && !$('#modal').hidden) closeModal(); });
+  $('#modalCancel').addEventListener('click', () => {
+    const fn = modalCancel;
+    closeModal();
+    if (fn) fn();
+  });
+  $('#modal').addEventListener('click', e => { if (e.target.id === 'modal' && !modalLocked) closeModal(); });
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape' && !$('#modal').hidden && !modalLocked) closeModal();
+  });
 
   document.addEventListener('visibilitychange', () => { if (document.hidden) save(); });
   window.addEventListener('beforeunload', save);
@@ -833,8 +889,30 @@ function frame(now) {
   requestAnimationFrame(frame);
 }
 
+// Small API used by js/cloud.js (Google sign-in, cloud save, leaderboard)
+window.TokenTycoon = {
+  exportState() {
+    state.lastSeen = Date.now();
+    return JSON.parse(JSON.stringify(state));
+  },
+  importState(data) {
+    state = normalize(data);
+    state.lastSeen = Date.now(); // no offline earnings when switching devices
+    save();
+    syncControls();
+    refreshPanel();
+  },
+  MODELS,
+  fmt,
+  money,
+  fmtTime,
+  toast,
+  showModal,
+  openTab,
+};
+
 buildInfra();
-buildPanel();
+buildLists();
 bindEvents();
 syncControls();
 applyOfflineEarnings();

@@ -39,6 +39,8 @@ Produce too much and your stock overflows. Too little and your customers wait. T
 - 👷 **SRE engineers** that automate production, even while the game is closed (up to 8 h)
 - 🔬 **68 research projects**: Flash Attention, Mixture of Experts, quantization…
 - 💼 **Fundraising** (prestige): start over with investors that boost your prices
+- 🔐 **Google sign-in** with **cloud saves**: never lose your lab, play on any device
+- 🏆 **Global leaderboard** of the richest AI labs
 - 💾 Auto-save · 🌗 light & dark themes · 📱 mobile friendly
 
 ## 🚀 Play
@@ -50,14 +52,22 @@ Produce too much and your stock overflows. Too little and your customers wait. T
 
 ```
 token-tycoon/
-├── index.html        # Page structure
+├── index.html               # Page structure and tabs
 ├── css/
-│   └── style.css     # Styling (themes, responsive layout)
+│   └── style.css            # Styling (themes, responsive layout)
 ├── js/
-│   └── game.js       # Game logic and balance
+│   ├── game.js              # Game logic and balance
+│   ├── cloud.js             # Google sign-in, cloud save, leaderboard
+│   └── firebase-config.js   # Firebase project config
+├── firestore.rules          # Database security rules
 └── docs/
+    ├── FIREBASE_SETUP.md    # How to enable online features
     └── screenshot.jpg
 ```
+
+## ☁️ Online features
+
+Sign-in, cloud saves and the leaderboard use Firebase. See [docs/FIREBASE_SETUP.md](docs/FIREBASE_SETUP.md) to set it up (about 5 minutes, free). Without it, the game still works and saves in the browser.
 
 ## 🛠️ Customize
 

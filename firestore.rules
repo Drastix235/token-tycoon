@@ -1,0 +1,35 @@
+rules_version = '2';
+
+// Security rules for Token Tycoon.
+// Paste them in Firebase console → Firestore Database → Rules.
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Cloud saves: each player can only read and write their own save.
+    match /saves/{uid} {
+      allow read: if request.auth != null && request.auth.uid == uid;
+      allow write: if request.auth != null && request.auth.uid == uid
+        && request.resource.data.keys().hasOnly(['data', 'allTimeEarned', 'updatedAt'])
+        && request.resource.data.data is string
+        && request.resource.data.data.size() < 200000
+        && request.resource.data.allTimeEarned is number
+        && request.resource.data.updatedAt == request.time;
+    }
+
+    // Leaderboard: public to read, each player can only write their own entry.
+    match /leaderboard/{uid} {
+      allow read: if true;
+      allow write: if request.auth != null && request.auth.uid == uid
+        && request.resource.data.keys().hasOnly(['labName', 'allTimeEarned', 'bestModel', 'updatedAt'])
+        && request.resource.data.labName is string
+        && request.resource.data.labName.size() > 0
+        && request.resource.data.labName.size() <= 30
+        && request.resource.data.allTimeEarned is number
+        && request.resource.data.allTimeEarned >= 0
+        && request.resource.data.bestModel is int
+        && request.resource.data.bestModel >= 0
+        && request.resource.data.bestModel <= 8
+        && request.resource.data.updatedAt == request.time;
+    }
+  }
+}

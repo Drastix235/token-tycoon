@@ -9,75 +9,87 @@
   <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
-  <header class="topbar">
-    <div class="brand">
-      <span class="logo">🧠</span>
-      <div>
-        <div class="brand-name">Token Tycoon</div>
-        <div class="brand-lab" id="labName"></div>
-      </div>
-    </div>
-    <div class="stats">
-      <div class="stat">
-        <span class="stat-label">Cash</span>
-        <span id="money" class="stat-value money">$0</span>
-      </div>
-      <div class="stat">
-        <span class="stat-label">Income</span>
-        <span id="mps" class="stat-value">$0/s</span>
-      </div>
-      <div class="stat">
-        <span class="stat-label">Token price</span>
-        <span id="price" class="stat-value">$1 / 1K</span>
-      </div>
-      <div class="stat">
-        <span class="stat-label">Investors</span>
-        <span id="investors" class="stat-value gold">0</span>
-      </div>
-    </div>
-  </header>
-
-  <main class="layout">
-    <section class="main-col">
-      <!-- Control center: production, demand, stock, training -->
-      <div class="card control">
-        <div class="control-grid">
-          <div class="metric">
-            <span class="stat-label">⚡ Compute capacity</span>
-            <strong id="capacity">0</strong>
-            <small>tokens / s</small>
-          </div>
-          <div class="metric">
-            <span class="stat-label">🛒 Customer demand</span>
-            <strong id="demand">0</strong>
-            <small>tokens / s</small>
-          </div>
-          <div class="metric">
-            <span class="stat-label">📦 Token stock</span>
-            <strong id="stock">0</strong>
-            <div class="mini-bar"><div id="stockBar"></div></div>
-          </div>
-        </div>
-        <p id="bottleneck" class="bottleneck"></p>
-
-        <div class="model">
-          <div class="model-head">
-            <span>Current model: <strong id="modelName"></strong> <span id="modelMult" class="pill"></span></span>
-            <span id="nextModel" class="muted"></span>
-          </div>
-          <div class="progress model-progress"><div class="bar" id="trainBar"></div><span class="biz-time" id="trainText"></span></div>
-          <label class="slider">
-            <span>Compute reserved for training</span>
-            <input type="range" id="trainShare" min="0" max="100" step="5" value="0">
-            <strong id="trainShareValue">0%</strong>
-          </label>
-          <p class="note small">Each new model doubles your token price. When your stock is full, unsold tokens go to training too.</p>
+  <div class="chrome">
+    <header class="topbar">
+      <div class="brand">
+        <span class="logo">🧠</span>
+        <div>
+          <div class="brand-name">Token Tycoon</div>
+          <div class="brand-lab" id="labName"></div>
         </div>
       </div>
+      <div class="stats">
+        <div class="stat">
+          <span class="stat-label">Cash</span>
+          <span id="money" class="stat-value money">$0</span>
+        </div>
+        <div class="stat">
+          <span class="stat-label">Income</span>
+          <span id="mps" class="stat-value">$0/s</span>
+        </div>
+        <div class="stat">
+          <span class="stat-label">Token price</span>
+          <span id="price" class="stat-value">$1 / 1K</span>
+        </div>
+        <div class="stat">
+          <span class="stat-label">Investors</span>
+          <span id="investors" class="stat-value gold">0</span>
+        </div>
+      </div>
+      <button type="button" id="accountBtn" class="account-btn">
+        <span id="accountAvatar" class="avatar">👤</span>
+        <span id="accountLabel">Sign in</span>
+      </button>
+    </header>
 
+    <nav class="tabbar" id="tabs" aria-label="Game sections">
+      <button type="button" data-tab="infra" class="active"><span>🏭</span><span class="tab-label">Infrastructure</span><i class="dot" id="dot-infra"></i></button>
+      <button type="button" data-tab="clients"><span>🛒</span><span class="tab-label">Customers</span><i class="dot" id="dot-clients"></i></button>
+      <button type="button" data-tab="models"><span>🧠</span><span class="tab-label">Models</span></button>
+      <button type="button" data-tab="team"><span>👷</span><span class="tab-label">Team</span><i class="dot" id="dot-team"></i></button>
+      <button type="button" data-tab="research"><span>🔬</span><span class="tab-label">Research</span><i class="dot" id="dot-research"></i></button>
+      <button type="button" data-tab="investors"><span>💼</span><span class="tab-label">Funding</span><i class="dot" id="dot-investors"></i></button>
+      <button type="button" data-tab="leaderboard"><span>🏆</span><span class="tab-label">Leaderboard</span></button>
+      <button type="button" data-tab="profile"><span>👤</span><span class="tab-label">Profile</span></button>
+    </nav>
+  </div>
+
+  <main class="container">
+    <!-- Market strip: always visible -->
+    <section class="card market">
+      <div class="market-grid">
+        <div class="metric">
+          <span class="stat-label">⚡ Compute capacity</span>
+          <strong id="capacity">0</strong>
+          <small>tokens / s</small>
+        </div>
+        <div class="metric">
+          <span class="stat-label">🛒 Customer demand</span>
+          <strong id="demand">0</strong>
+          <small>tokens / s</small>
+        </div>
+        <div class="metric">
+          <span class="stat-label">📦 Token stock</span>
+          <strong id="stock">0</strong>
+          <div class="mini-bar"><div id="stockBar"></div></div>
+        </div>
+        <div class="metric">
+          <span class="stat-label">🧠 Training</span>
+          <strong id="trainMini">0%</strong>
+          <div class="mini-bar"><div id="trainMiniBar"></div></div>
+        </div>
+      </div>
+      <p id="bottleneck" class="bottleneck"></p>
+    </section>
+
+    <!-- Infrastructure -->
+    <section id="tab-infra" class="tab-content">
       <div class="section-head">
-        <h2>Infrastructure</h2>
-        <div class="segmented" id="buyMode" role="group" aria-label="Amount to buy">
+        <div>
+          <h2>Infrastructure</h2>
+          <p class="note">Your machines produce tokens. Click a machine to run a cycle.</p>
+        </div>
+        <div class="segmented buy-mode" role="group" aria-label="Amount to buy">
           <button type="button" data-mode="1">x1</button>
           <button type="button" data-mode="10">x10</button>
           <button type="button" data-mode="100">x100</button>
@@ -88,23 +100,79 @@
       <p id="lockedHint" class="locked-hint"></p>
     </section>
 
-    <aside class="panel">
-      <nav class="tabs" id="tabs">
-        <button type="button" data-tab="clients" class="active">Customers</button>
-        <button type="button" data-tab="team">Team</button>
-        <button type="button" data-tab="research">Research</button>
-        <button type="button" data-tab="investors">Funding</button>
-        <button type="button" data-tab="stats">Stats</button>
-      </nav>
+    <!-- Customers -->
+    <section id="tab-clients" class="tab-content" hidden>
+      <div class="section-head">
+        <div>
+          <h2>Customers</h2>
+          <p class="note">Customers buy tokens every second. Without them, your tokens just pile up in stock.</p>
+        </div>
+        <div class="segmented buy-mode" role="group" aria-label="Amount to buy">
+          <button type="button" data-mode="1">x1</button>
+          <button type="button" data-mode="10">x10</button>
+          <button type="button" data-mode="100">x100</button>
+          <button type="button" data-mode="max">Max</button>
+        </div>
+      </div>
+      <div class="card list" id="clientsList"></div>
+      <p id="clientsHint" class="locked-hint"></p>
+    </section>
 
-      <div id="tab-clients" class="tab-content"></div>
+    <!-- Models -->
+    <section id="tab-models" class="tab-content" hidden>
+      <div class="section-head">
+        <div>
+          <h2>Models</h2>
+          <p class="note">Each new model doubles your token price. When your stock is full, unsold tokens go to training too.</p>
+        </div>
+      </div>
+      <div class="card pad">
+        <div class="model-head">
+          <span>Current model: <strong id="modelName"></strong> <span id="modelMult" class="pill"></span></span>
+          <span id="nextModel" class="muted"></span>
+        </div>
+        <div class="progress model-progress"><div class="bar" id="trainBar"></div><span class="biz-time" id="trainText"></span></div>
+        <label class="slider">
+          <span>Compute reserved for training</span>
+          <input type="range" id="trainShare" min="0" max="100" step="5" value="0">
+          <strong id="trainShareValue">0%</strong>
+        </label>
+      </div>
+      <h3 class="subhead">Roadmap</h3>
+      <div class="card list" id="modelsList"></div>
+    </section>
 
-      <div id="tab-team" class="tab-content" hidden></div>
+    <!-- Team -->
+    <section id="tab-team" class="tab-content" hidden>
+      <div class="section-head">
+        <div>
+          <h2>Team</h2>
+          <p class="note">An SRE engineer restarts a machine automatically, even while the game is closed.</p>
+        </div>
+      </div>
+      <div class="card list" id="teamList"></div>
+    </section>
 
-      <div id="tab-research" class="tab-content" hidden></div>
+    <!-- Research -->
+    <section id="tab-research" class="tab-content" hidden>
+      <div class="section-head">
+        <div>
+          <h2>Research</h2>
+          <p class="note" id="upgradeCount"></p>
+        </div>
+      </div>
+      <div class="card list" id="researchList"></div>
+    </section>
 
-      <div id="tab-investors" class="tab-content" hidden>
-        <p class="note">Sell your lab to a tech giant and start over with investors. Each investor raises the price of <strong>all</strong> your tokens by 2%, forever.</p>
+    <!-- Funding -->
+    <section id="tab-investors" class="tab-content" hidden>
+      <div class="section-head">
+        <div>
+          <h2>Funding</h2>
+          <p class="note">Sell your lab to a tech giant and start over with investors. Each investor raises the price of <strong>all</strong> your tokens by 2%, forever.</p>
+        </div>
+      </div>
+      <div class="card pad">
         <div class="kv"><span>Current investors</span><span id="invCurrent"></span></div>
         <div class="kv"><span>Price bonus</span><span id="invBonus"></span></div>
         <div class="kv"><span>Available now</span><span id="invClaimable" class="gold"></span></div>
@@ -113,14 +181,43 @@
           <button type="button" id="prestigeBtn" class="btn gold-btn">Raise funds</button>
         </div>
       </div>
+    </section>
 
-      <div id="tab-stats" class="tab-content" hidden>
+    <!-- Leaderboard -->
+    <section id="tab-leaderboard" class="tab-content" hidden>
+      <div class="section-head">
+        <div>
+          <h2>Leaderboard</h2>
+          <p class="note">The richest AI labs of all time. Sign in with Google to appear here. Only your lab name and score are public.</p>
+        </div>
+        <button type="button" id="leaderboardRefresh" class="btn ghost">↻ Refresh</button>
+      </div>
+      <div class="card list" id="leaderboardList">
+        <p class="empty">Online features are not available right now.</p>
+      </div>
+    </section>
+
+    <!-- Profile -->
+    <section id="tab-profile" class="tab-content" hidden>
+      <div class="section-head">
+        <div>
+          <h2>Profile</h2>
+          <p class="note">Sign in with Google to back up your progress in the cloud and play on any device.</p>
+        </div>
+      </div>
+      <div class="card pad" id="accountBox">
+        <p class="empty">Online features are not available right now.</p>
+      </div>
+
+      <h3 class="subhead">Your lab</h3>
+      <div class="card pad">
         <label class="field">
-          <span>Lab name</span>
+          <span>Lab name (shown on the leaderboard)</span>
           <input type="text" id="labInput" maxlength="30" autocomplete="off">
         </label>
         <div class="kv"><span>Earned this run</span><span id="stEarned"></span></div>
         <div class="kv"><span>Earned all time</span><span id="stAllTime"></span></div>
+        <div class="kv"><span>Best model ever</span><span id="stBestModel"></span></div>
         <div class="kv"><span>Tokens produced</span><span id="stProduced"></span></div>
         <div class="kv"><span>Tokens sold</span><span id="stSold"></span></div>
         <div class="kv"><span>Machines owned</span><span id="stOwned"></span></div>
@@ -130,9 +227,9 @@
           <button type="button" id="saveBtn" class="btn ghost">💾 Save</button>
           <button type="button" id="resetBtn" class="btn danger">Wipe save</button>
         </div>
-        <p class="note small">Your game is saved automatically in your browser every 5 seconds.</p>
+        <p class="note small">Your game is saved in this browser every 5 seconds, and in the cloud every 30 seconds when you are signed in.</p>
       </div>
-    </aside>
+    </section>
   </main>
 
   <div id="toasts" class="toasts" aria-live="polite"></div>
@@ -149,5 +246,6 @@
   </div>
 
   <script src="js/game.js"></script>
+  <script type="module" src="js/cloud.js"></script>
 </body>
 </html>
