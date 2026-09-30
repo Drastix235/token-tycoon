@@ -1,0 +1,153 @@
+﻿<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Token Tycoon</title>
+  <meta name="description" content="Dirigez un labo d'IA : construisez des data centers, vendez des tokens et entraînez des modèles toujours plus puissants.">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🧠</text></svg>">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <span class="logo">🧠</span>
+      <div>
+        <div class="brand-name">Token Tycoon</div>
+        <div class="brand-lab" id="labName"></div>
+      </div>
+    </div>
+    <div class="stats">
+      <div class="stat">
+        <span class="stat-label">Argent</span>
+        <span id="money" class="stat-value money">0 €</span>
+      </div>
+      <div class="stat">
+        <span class="stat-label">Revenus</span>
+        <span id="mps" class="stat-value">0 €/s</span>
+      </div>
+      <div class="stat">
+        <span class="stat-label">Prix des tokens</span>
+        <span id="price" class="stat-value">1 € / 1k</span>
+      </div>
+      <div class="stat">
+        <span class="stat-label">Investisseurs</span>
+        <span id="investors" class="stat-value gold">0</span>
+      </div>
+    </div>
+  </header>
+
+  <main class="layout">
+    <section class="main-col">
+      <!-- Centre de contrôle : production, demande, stock, entraînement -->
+      <div class="card control">
+        <div class="control-grid">
+          <div class="metric">
+            <span class="stat-label">⚡ Capacité de calcul</span>
+            <strong id="capacity">0</strong>
+            <small>tokens / s</small>
+          </div>
+          <div class="metric">
+            <span class="stat-label">🛒 Demande des clients</span>
+            <strong id="demand">0</strong>
+            <small>tokens / s</small>
+          </div>
+          <div class="metric">
+            <span class="stat-label">📦 Stock de tokens</span>
+            <strong id="stock">0</strong>
+            <div class="mini-bar"><div id="stockBar"></div></div>
+          </div>
+        </div>
+        <p id="bottleneck" class="bottleneck"></p>
+
+        <div class="model">
+          <div class="model-head">
+            <span>Modèle actuel : <strong id="modelName"></strong> <span id="modelMult" class="pill"></span></span>
+            <span id="nextModel" class="muted"></span>
+          </div>
+          <div class="progress model-progress"><div class="bar" id="trainBar"></div><span class="biz-time" id="trainText"></span></div>
+          <label class="slider">
+            <span>Compute réservé à l'entraînement</span>
+            <input type="range" id="trainShare" min="0" max="100" step="5" value="0">
+            <strong id="trainShareValue">0 %</strong>
+          </label>
+          <p class="note small">Chaque nouveau modèle double le prix de vos tokens. Quand le stock est plein, les tokens invendus servent aussi à l'entraînement.</p>
+        </div>
+      </div>
+
+      <div class="section-head">
+        <h2>Infrastructure</h2>
+        <div class="segmented" id="buyMode" role="group" aria-label="Quantité à acheter">
+          <button type="button" data-mode="1">x1</button>
+          <button type="button" data-mode="10">x10</button>
+          <button type="button" data-mode="100">x100</button>
+          <button type="button" data-mode="max">Max</button>
+        </div>
+      </div>
+      <div id="businessList"></div>
+      <p id="lockedHint" class="locked-hint"></p>
+    </section>
+
+    <aside class="panel">
+      <nav class="tabs" id="tabs">
+        <button type="button" data-tab="clients" class="active">Clients</button>
+        <button type="button" data-tab="team">Équipe</button>
+        <button type="button" data-tab="research">Recherche</button>
+        <button type="button" data-tab="investors">Levée</button>
+        <button type="button" data-tab="stats">Stats</button>
+      </nav>
+
+      <div id="tab-clients" class="tab-content"></div>
+
+      <div id="tab-team" class="tab-content" hidden></div>
+
+      <div id="tab-research" class="tab-content" hidden></div>
+
+      <div id="tab-investors" class="tab-content" hidden>
+        <p class="note">Revendez votre labo à un géant de la tech et repartez de zéro avec des investisseurs. Chaque investisseur augmente le prix de <strong>tous</strong> vos tokens de 2 %, pour toujours.</p>
+        <div class="kv"><span>Investisseurs actuels</span><span id="invCurrent"></span></div>
+        <div class="kv"><span>Bonus sur le prix</span><span id="invBonus"></span></div>
+        <div class="kv"><span>Recrutables maintenant</span><span id="invClaimable" class="gold"></span></div>
+        <div class="kv"><span>Prochain investisseur dans</span><span id="invNext"></span></div>
+        <div class="actions">
+          <button type="button" id="prestigeBtn" class="btn gold-btn">Lever des fonds</button>
+        </div>
+      </div>
+
+      <div id="tab-stats" class="tab-content" hidden>
+        <label class="field">
+          <span>Nom de votre labo</span>
+          <input type="text" id="labInput" maxlength="30" autocomplete="off">
+        </label>
+        <div class="kv"><span>Gagné cette partie</span><span id="stEarned"></span></div>
+        <div class="kv"><span>Gagné depuis le début</span><span id="stAllTime"></span></div>
+        <div class="kv"><span>Tokens produits</span><span id="stProduced"></span></div>
+        <div class="kv"><span>Tokens vendus</span><span id="stSold"></span></div>
+        <div class="kv"><span>Machines possédées</span><span id="stOwned"></span></div>
+        <div class="kv"><span>Temps de jeu</span><span id="stTime"></span></div>
+        <div class="kv"><span>Levées de fonds</span><span id="stResets"></span></div>
+        <div class="actions">
+          <button type="button" id="saveBtn" class="btn ghost">💾 Sauvegarder</button>
+          <button type="button" id="resetBtn" class="btn danger">Tout effacer</button>
+        </div>
+        <p class="note small">La partie est sauvegardée automatiquement dans votre navigateur toutes les 5 secondes.</p>
+      </div>
+    </aside>
+  </main>
+
+  <div id="toasts" class="toasts" aria-live="polite"></div>
+
+  <div id="modal" class="modal" hidden>
+    <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+      <h2 id="modalTitle"></h2>
+      <div id="modalBody"></div>
+      <div class="modal-actions">
+        <button type="button" id="modalCancel" class="btn ghost">Annuler</button>
+        <button type="button" id="modalConfirm" class="btn">OK</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="js/game.js"></script>
+</body>
+</html>
