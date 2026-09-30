@@ -1,53 +1,53 @@
 'use strict';
 
 /* =====================================================================
-   CONFIGURATION DU JEU
-   Modifiez ces valeurs pour changer l'équilibrage ou ajouter du contenu.
+   GAME CONFIGURATION
+   Tweak these values to change the balance or add content.
    ===================================================================== */
 
 const SAVE_KEY = 'token-tycoon-save-v1';
-const MILESTONES = [25, 50, 100, 200, 300, 400, 500]; // chaque palier double la vitesse (ou la demande)
-const BASE_PRICE = 0.001;             // € par token, soit 1 € les 1 000 tokens
-const INVESTOR_BONUS = 0.02;          // +2 % sur le prix des tokens par investisseur
-const INVESTOR_DIVISOR = 1e8;         // plus c'est grand, plus les investisseurs sont rares
-const OFFLINE_CAP_SECONDS = 8 * 3600; // gains hors-ligne limités à 8 h
-const STOCK_SECONDS = 600;            // le stock contient au maximum 10 min de demande
+const MILESTONES = [25, 50, 100, 200, 300, 400, 500]; // each milestone doubles speed (or demand)
+const BASE_PRICE = 0.001;             // $ per token, i.e. $1 per 1,000 tokens
+const INVESTOR_BONUS = 0.02;          // +2% token price per investor
+const INVESTOR_DIVISOR = 1e8;         // higher = rarer investors
+const OFFLINE_CAP_SECONDS = 8 * 3600; // offline earnings capped at 8 h
+const STOCK_SECONDS = 600;            // stock holds at most 10 min of demand
 const MIN_STOCK = 1e4;
-const FAST_CYCLE = 0.15;              // en dessous (secondes), la barre devient « rayée »
+const FAST_CYCLE = 0.15;              // below this (seconds) the bar becomes "striped"
 const UPGRADES_SHOWN = 12;
-const DEFAULT_LAB_NAME = 'Mon labo IA';
+const DEFAULT_LAB_NAME = 'My AI Lab';
 
-// L'infrastructure produit des tokens.
-// baseCost : prix de la 1re machine · costMult : hausse du prix à chaque achat
-// tokens : tokens produits par machine et par cycle · time : durée d'un cycle (s)
+// Infrastructure produces tokens.
+// baseCost: price of the 1st machine · costMult: price increase per purchase
+// tokens: tokens per machine per cycle · time: cycle duration (s)
 const INFRA = [
-  { id: 'laptop',     name: 'Laptop de dev',          icon: '💻', baseCost: 4,       costMult: 1.07, tokens: 1e3,     time: 1,   managerCost: 1e3 },
-  { id: 'gpu',        name: 'PC gamer avec GPU',      icon: '🎮', baseCost: 60,      costMult: 1.15, tokens: 6e4,     time: 3,   managerCost: 1.5e4 },
-  { id: 'serveur',    name: 'Serveur GPU',            icon: '🖥️', baseCost: 720,     costMult: 1.14, tokens: 5.4e5,   time: 6,   managerCost: 1e5 },
-  { id: 'rack',       name: 'Rack de GPU',            icon: '🗄️', baseCost: 8640,    costMult: 1.13, tokens: 4.32e6,  time: 12,  managerCost: 5e5 },
-  { id: 'salle',      name: 'Salle serveur',          icon: '🏢', baseCost: 103680,  costMult: 1.12, tokens: 5.184e7, time: 24,  managerCost: 1.2e6 },
-  { id: 'datacenter', name: 'Data center',            icon: '🏭', baseCost: 1.24e6,  costMult: 1.11, tokens: 6.22e8,  time: 48,  managerCost: 1e7 },
-  { id: 'polaire',    name: 'Data center polaire',    icon: '❄️', baseCost: 1.49e7,  costMult: 1.10, tokens: 7.46e9,  time: 96,  managerCost: 1.11e8 },
-  { id: 'nucleaire',  name: 'Data center nucléaire',  icon: '☢️', baseCost: 1.79e8,  costMult: 1.09, tokens: 8.96e10, time: 192, managerCost: 5.55e8 },
-  { id: 'sousmarin',  name: 'Data center sous-marin', icon: '🌊', baseCost: 2.15e9,  costMult: 1.08, tokens: 1.07e12, time: 384, managerCost: 1e10 },
-  { id: 'orbital',    name: 'Data center orbital',    icon: '🛰️', baseCost: 2.58e10, costMult: 1.07, tokens: 2.97e13, time: 768, managerCost: 1e11 },
+  { id: 'laptop',     name: 'Dev laptop',            icon: '💻', baseCost: 4,       costMult: 1.07, tokens: 1e3,     time: 1,   managerCost: 1e3 },
+  { id: 'gpu',        name: 'Gaming PC with GPU',    icon: '🎮', baseCost: 60,      costMult: 1.15, tokens: 6e4,     time: 3,   managerCost: 1.5e4 },
+  { id: 'serveur',    name: 'GPU server',            icon: '🖥️', baseCost: 720,     costMult: 1.14, tokens: 5.4e5,   time: 6,   managerCost: 1e5 },
+  { id: 'rack',       name: 'GPU rack',              icon: '🗄️', baseCost: 8640,    costMult: 1.13, tokens: 4.32e6,  time: 12,  managerCost: 5e5 },
+  { id: 'salle',      name: 'Server room',           icon: '🏢', baseCost: 103680,  costMult: 1.12, tokens: 5.184e7, time: 24,  managerCost: 1.2e6 },
+  { id: 'datacenter', name: 'Data center',           icon: '🏭', baseCost: 1.24e6,  costMult: 1.11, tokens: 6.22e8,  time: 48,  managerCost: 1e7 },
+  { id: 'polaire',    name: 'Arctic data center',    icon: '❄️', baseCost: 1.49e7,  costMult: 1.10, tokens: 7.46e9,  time: 96,  managerCost: 1.11e8 },
+  { id: 'nucleaire',  name: 'Nuclear data center',   icon: '☢️', baseCost: 1.79e8,  costMult: 1.09, tokens: 8.96e10, time: 192, managerCost: 5.55e8 },
+  { id: 'sousmarin',  name: 'Underwater data center',icon: '🌊', baseCost: 2.15e9,  costMult: 1.08, tokens: 1.07e12, time: 384, managerCost: 1e10 },
+  { id: 'orbital',    name: 'Orbital data center',   icon: '🛰️', baseCost: 2.58e10, costMult: 1.07, tokens: 2.97e13, time: 768, managerCost: 1e11 },
 ];
 
-// Les clients achètent des tokens. demand : tokens achetés par seconde et par client.
+// Customers buy tokens. demand: tokens bought per second per customer.
 const CLIENTS = [
-  { id: 'devs',       name: 'Développeurs curieux', icon: '🧑‍💻', baseCost: 4,       costMult: 1.07, demand: 1e3 },
-  { id: 'etudiants',  name: 'Étudiants',            icon: '🎓', baseCost: 60,      costMult: 1.15, demand: 2e4 },
-  { id: 'startups',   name: 'Startups',             icon: '🚀', baseCost: 720,     costMult: 1.14, demand: 9e4 },
-  { id: 'createurs',  name: 'Créateurs de contenu', icon: '✍️', baseCost: 8640,    costMult: 1.13, demand: 3.6e5 },
-  { id: 'pme',        name: 'PME',                  icon: '🏪', baseCost: 103680,  costMult: 1.12, demand: 2.16e6 },
-  { id: 'hopitaux',   name: 'Hôpitaux et labos',    icon: '🏥', baseCost: 1.24e6,  costMult: 1.11, demand: 1.3e7 },
-  { id: 'banques',    name: 'Banques',              icon: '🏦', baseCost: 1.49e7,  costMult: 1.10, demand: 7.8e7 },
-  { id: 'multinat',   name: 'Multinationales',      icon: '🏙️', baseCost: 1.79e8,  costMult: 1.09, demand: 4.7e8 },
-  { id: 'gouv',       name: 'Gouvernements',        icon: '🏛️', baseCost: 2.15e9,  costMult: 1.08, demand: 2.8e9 },
-  { id: 'aliens',     name: 'Extraterrestres',      icon: '👽', baseCost: 2.58e10, costMult: 1.07, demand: 3.9e10 },
+  { id: 'devs',       name: 'Curious developers',  icon: '🧑‍💻', baseCost: 4,       costMult: 1.07, demand: 1e3 },
+  { id: 'etudiants',  name: 'Students',            icon: '🎓', baseCost: 60,      costMult: 1.15, demand: 2e4 },
+  { id: 'startups',   name: 'Startups',            icon: '🚀', baseCost: 720,     costMult: 1.14, demand: 9e4 },
+  { id: 'createurs',  name: 'Content creators',    icon: '✍️', baseCost: 8640,    costMult: 1.13, demand: 3.6e5 },
+  { id: 'pme',        name: 'Small businesses',    icon: '🏪', baseCost: 103680,  costMult: 1.12, demand: 2.16e6 },
+  { id: 'hopitaux',   name: 'Hospitals & labs',    icon: '🏥', baseCost: 1.24e6,  costMult: 1.11, demand: 1.3e7 },
+  { id: 'banques',    name: 'Banks',               icon: '🏦', baseCost: 1.49e7,  costMult: 1.10, demand: 7.8e7 },
+  { id: 'multinat',   name: 'Multinationals',      icon: '🏙️', baseCost: 1.79e8,  costMult: 1.09, demand: 4.7e8 },
+  { id: 'gouv',       name: 'Governments',         icon: '🏛️', baseCost: 2.15e9,  costMult: 1.08, demand: 2.8e9 },
+  { id: 'aliens',     name: 'Aliens',              icon: '👽', baseCost: 2.58e10, costMult: 1.07, demand: 3.9e10 },
 ];
 
-// Modèles d'IA : cost = tokens nécessaires pour entraîner ce modèle
+// AI models: cost = tokens needed to train this model
 const MODELS = [
   { name: 'Nano',              mult: 1,   cost: 0 },
   { name: 'Mini',              mult: 2,   cost: 1e7 },
@@ -55,46 +55,46 @@ const MODELS = [
   { name: 'Pro',               mult: 8,   cost: 1e13 },
   { name: 'Ultra',             mult: 16,  cost: 1e16 },
   { name: 'Max',               mult: 32,  cost: 1e19 },
-  { name: 'Génie',             mult: 64,  cost: 1e22 },
+  { name: 'Genius',            mult: 64,  cost: 1e22 },
   { name: 'AGI',               mult: 128, cost: 1e25 },
   { name: 'Superintelligence', mult: 256, cost: 1e28 },
 ];
 
 const INFRA_TIERS = [
-  { key: 'cuda',  label: 'Optimisation CUDA',     costFactor: 1e3, mult: 3 },
-  { key: 'quant', label: 'Quantification 4 bits', costFactor: 1e6, mult: 3 },
-  { key: 'puces', label: 'Puces sur mesure',      costFactor: 1e9, mult: 3 },
+  { key: 'cuda',  label: 'CUDA optimization',  costFactor: 1e3, mult: 3 },
+  { key: 'quant', label: '4-bit quantization', costFactor: 1e6, mult: 3 },
+  { key: 'puces', label: 'Custom chips',       costFactor: 1e9, mult: 3 },
 ];
 
 const CLIENT_TIERS = [
-  { key: 'pub',      label: 'Campagne ciblée',  costFactor: 1e3, mult: 3 },
-  { key: 'offre',    label: 'Offre entreprise', costFactor: 1e6, mult: 3 },
-  { key: 'contrat',  label: 'Contrat exclusif', costFactor: 1e9, mult: 3 },
+  { key: 'pub',     label: 'Targeted campaign', costFactor: 1e3, mult: 3 },
+  { key: 'offre',   label: 'Enterprise plan',   costFactor: 1e6, mult: 3 },
+  { key: 'contrat', label: 'Exclusive deal',    costFactor: 1e9, mult: 3 },
 ];
 
 const UPGRADES = [
   ...INFRA.flatMap(b => INFRA_TIERS.map(t => ({
     id: `infra-${b.id}-${t.key}`, kind: 'infra', target: b.id, icon: b.icon,
-    name: t.label, desc: `${b.name} : tokens x${t.mult}`, mult: t.mult, cost: b.baseCost * t.costFactor,
+    name: t.label, desc: `${b.name}: tokens x${t.mult}`, mult: t.mult, cost: b.baseCost * t.costFactor,
   }))),
   ...CLIENTS.flatMap(c => CLIENT_TIERS.map(t => ({
     id: `client-${c.id}-${t.key}`, kind: 'clients', target: c.id, icon: c.icon,
-    name: t.label, desc: `${c.name} : demande x${t.mult}`, mult: t.mult, cost: c.baseCost * t.costFactor,
+    name: t.label, desc: `${c.name}: demand x${t.mult}`, mult: t.mult, cost: c.baseCost * t.costFactor,
   }))),
-  { id: 'g-flash',   kind: 'infra',   target: 'all', icon: '⚡', name: 'Flash Attention',             desc: 'Toute l\'infrastructure : tokens x3', mult: 3, cost: 5e7 },
-  { id: 'g-moe',     kind: 'infra',   target: 'all', icon: '🧩', name: 'Mixture of Experts',          desc: 'Toute l\'infrastructure : tokens x3', mult: 3, cost: 5e10 },
-  { id: 'g-liquide', kind: 'infra',   target: 'all', icon: '💧', name: 'Refroidissement liquide',     desc: 'Toute l\'infrastructure : tokens x3', mult: 3, cost: 5e13 },
-  { id: 'g-quantum', kind: 'infra',   target: 'all', icon: '⚛️', name: 'Informatique quantique',      desc: 'Toute l\'infrastructure : tokens x5', mult: 5, cost: 5e16 },
-  { id: 'g-app',     kind: 'clients', target: 'all', icon: '📱', name: 'Application mobile',          desc: 'Tous les clients : demande x3',      mult: 3, cost: 5e7 },
-  { id: 'g-api',     kind: 'clients', target: 'all', icon: '🔌', name: 'API publique',                desc: 'Tous les clients : demande x3',      mult: 3, cost: 5e10 },
-  { id: 'g-pub',     kind: 'clients', target: 'all', icon: '📺', name: 'Pub à la télé',               desc: 'Tous les clients : demande x3',      mult: 3, cost: 5e13 },
-  { id: 'g-foyer',   kind: 'clients', target: 'all', icon: '🏠', name: 'Un assistant dans chaque foyer', desc: 'Tous les clients : demande x5',   mult: 5, cost: 5e16 },
+  { id: 'g-flash',   kind: 'infra',   target: 'all', icon: '⚡', name: 'Flash Attention',       desc: 'All infrastructure: tokens x3', mult: 3, cost: 5e7 },
+  { id: 'g-moe',     kind: 'infra',   target: 'all', icon: '🧩', name: 'Mixture of Experts',    desc: 'All infrastructure: tokens x3', mult: 3, cost: 5e10 },
+  { id: 'g-liquide', kind: 'infra',   target: 'all', icon: '💧', name: 'Liquid cooling',        desc: 'All infrastructure: tokens x3', mult: 3, cost: 5e13 },
+  { id: 'g-quantum', kind: 'infra',   target: 'all', icon: '⚛️', name: 'Quantum computing',     desc: 'All infrastructure: tokens x5', mult: 5, cost: 5e16 },
+  { id: 'g-app',     kind: 'clients', target: 'all', icon: '📱', name: 'Mobile app',            desc: 'All customers: demand x3',      mult: 3, cost: 5e7 },
+  { id: 'g-api',     kind: 'clients', target: 'all', icon: '🔌', name: 'Public API',            desc: 'All customers: demand x3',      mult: 3, cost: 5e10 },
+  { id: 'g-pub',     kind: 'clients', target: 'all', icon: '📺', name: 'TV ads',                desc: 'All customers: demand x3',      mult: 3, cost: 5e13 },
+  { id: 'g-foyer',   kind: 'clients', target: 'all', icon: '🏠', name: 'An assistant in every home', desc: 'All customers: demand x5',  mult: 5, cost: 5e16 },
 ].sort((a, b) => a.cost - b.cost);
 
 const UPGRADE_BY_ID = Object.fromEntries(UPGRADES.map(u => [u.id, u]));
 
 /* =====================================================================
-   ÉTAT DE LA PARTIE
+   GAME STATE
    ===================================================================== */
 
 function newState() {
@@ -129,7 +129,7 @@ function load() {
     const data = JSON.parse(raw);
     const base = newState();
     const merged = { ...base, ...data, infra: { ...base.infra }, clients: { ...base.clients } };
-    // Garde la compatibilité si on ajoute du contenu plus tard
+    // Stay compatible with saves made before new content was added
     for (const b of INFRA) {
       if (data.infra && data.infra[b.id]) merged.infra[b.id] = { ...base.infra[b.id], ...data.infra[b.id] };
     }
@@ -138,6 +138,7 @@ function load() {
     }
     merged.upgrades = (data.upgrades || []).filter(id => UPGRADE_BY_ID[id]);
     merged.modelIndex = Math.min(merged.modelIndex, MODELS.length - 1);
+    if (merged.labName === 'Mon labo IA') merged.labName = DEFAULT_LAB_NAME; // old French default
     return merged;
   } catch (e) {
     return null;
@@ -149,14 +150,14 @@ function save() {
   try {
     localStorage.setItem(SAVE_KEY, JSON.stringify(state));
   } catch (e) {
-    // stockage indisponible (navigation privée…) : le jeu continue sans sauvegarde
+    // storage unavailable (private browsing…): the game keeps running without saving
   }
 }
 
 let state = load() || newState();
 
 /* =====================================================================
-   CALCULS
+   CALCULATIONS
    ===================================================================== */
 
 function speedMult(owned) {
@@ -188,17 +189,17 @@ function capacity(onlyAutomated = false) {
   return sum;
 }
 
-// --- Clients ---
+// --- Customers ---
 const clientOf = c => state.clients[c.id];
 const clientDemand = c => c.demand * clientOf(c).owned * speedMult(clientOf(c).owned) * upgradeMult('clients', c.id);
 const totalDemand = () => CLIENTS.reduce((sum, c) => sum + clientDemand(c), 0);
 
-// --- Marché ---
+// --- Market ---
 const price = () => BASE_PRICE * MODELS[state.modelIndex].mult * (1 + state.investors * INVESTOR_BONUS);
 const stockCap = () => Math.max(MIN_STOCK, totalDemand() * STOCK_SECONDS);
 const nextModel = () => MODELS[state.modelIndex + 1] || null;
 
-// --- Achats (fonctionne pour l'infrastructure comme pour les clients) ---
+// --- Purchases (shared by infrastructure and customers) ---
 function costFor(def, owned, n) {
   const r = def.costMult;
   return def.baseCost * Math.pow(r, owned) * (Math.pow(r, n) - 1) / (r - 1);
@@ -208,7 +209,7 @@ function maxAffordable(def, owned) {
   const r = def.costMult;
   const first = def.baseCost * Math.pow(r, owned);
   let n = Math.floor(Math.log(state.money * (r - 1) / first + 1) / Math.log(r));
-  while (n > 0 && costFor(def, owned, n) > state.money) n--; // corrige les arrondis
+  while (n > 0 && costFor(def, owned, n) > state.money) n--; // fix floating-point rounding
   return Math.max(n, 0);
 }
 
@@ -218,14 +219,14 @@ function purchaseCount(def, owned) {
   return Number(state.buyMode);
 }
 
-// --- Investisseurs ---
-// Racine cubique : chaque investisseur supplémentaire demande de gagner bien plus
+// --- Investors ---
+// Cube root: each extra investor requires earning much more
 const totalInvestorsFor = earned => Math.floor(Math.cbrt(earned / INVESTOR_DIVISOR));
 const earningsForInvestors = n => Math.pow(n, 3) * INVESTOR_DIVISOR;
 const claimableInvestors = () => Math.max(0, totalInvestorsFor(state.allTimeEarned) - state.investors);
 
 /* =====================================================================
-   ÉCONOMIE DES TOKENS
+   TOKEN ECONOMY
    ===================================================================== */
 
 let earnedThisFrame = 0;
@@ -237,7 +238,7 @@ function earn(amount) {
   earnedThisFrame += amount;
 }
 
-// Des tokens sortent des machines : une part va à l'entraînement, le reste en stock
+// Tokens come out of the machines: a share goes to training, the rest to stock
 function produce(tokens) {
   state.tokensProduced += tokens;
   const forTraining = tokens * state.trainShare;
@@ -245,7 +246,7 @@ function produce(tokens) {
   state.stock += tokens - forTraining;
   const cap = stockCap();
   if (state.stock > cap) {
-    train(state.stock - cap); // le surplus invendable part à l'entraînement
+    train(state.stock - cap); // unsellable surplus goes to training
     state.stock = cap;
   }
 }
@@ -257,13 +258,13 @@ function train(tokens) {
   while (next && state.training >= next.cost) {
     state.training -= next.cost;
     state.modelIndex++;
-    toast(`🧠 Nouveau modèle « ${next.name} » ! Le prix de vos tokens est multiplié par 2`);
+    toast(`🧠 New model "${next.name}" released! Your token price doubles`);
     next = nextModel();
   }
   if (!next) state.training = 0;
 }
 
-// Les clients achètent en continu dans le stock
+// Customers buy continuously from the stock
 function sell(dt) {
   const sold = Math.min(state.stock, totalDemand() * dt);
   if (sold <= 0) return;
@@ -273,7 +274,7 @@ function sell(dt) {
 }
 
 /* =====================================================================
-   ACTIONS DU JOUEUR
+   PLAYER ACTIONS
    ===================================================================== */
 
 function startCycle(b) {
@@ -293,22 +294,22 @@ function buy(def, s, label) {
   state.money -= cost;
   s.owned += n;
 
-  if (before === 0) toast(`${def.icon} ${def.name} débloqué !`);
+  if (before === 0) toast(`${def.icon} ${def.name} unlocked!`);
   for (const m of MILESTONES) {
-    if (before < m && s.owned >= m) toast(`${def.icon} ${def.name} : ${m} ! ${label} x2 ⚡`);
+    if (before < m && s.owned >= m) toast(`${def.icon} ${def.name}: ${m}! ${label} x2 ⚡`);
   }
   refreshPanel();
 }
 
-const buyInfra = b => buy(b, infraOf(b), 'Vitesse');
-const buyClient = c => buy(c, clientOf(c), 'Demande');
+const buyInfra = b => buy(b, infraOf(b), 'Speed');
+const buyClient = c => buy(c, clientOf(c), 'Demand');
 
 function hireManager(b) {
   const s = infraOf(b);
   if (s.manager || !s.owned || state.money < b.managerCost) return;
   state.money -= b.managerCost;
   s.manager = true;
-  toast(`👷 Ingénieur SRE embauché : ${b.name} tourne tout seul`);
+  toast(`👷 SRE engineer hired: ${b.name} now runs on its own`);
   refreshPanel();
 }
 
@@ -316,7 +317,7 @@ function buyUpgrade(u) {
   if (state.upgrades.includes(u.id) || state.money < u.cost) return;
   state.money -= u.cost;
   state.upgrades.push(u.id);
-  toast(`${u.icon} ${u.name} : ${u.desc}`);
+  toast(`${u.icon} ${u.name}: ${u.desc}`);
   refreshPanel();
 }
 
@@ -324,11 +325,11 @@ function prestige() {
   const gain = claimableInvestors();
   if (gain < 1) return;
   showModal({
-    title: 'Lever des fonds ?',
-    body: `<p>Vous revendez votre labo : argent, machines, clients, équipe, recherches et modèles repartent de zéro.</p>
-           <p>En échange, <strong>${fmt(gain)} investisseurs</strong> vous rejoignent
-           (+${fmt(gain * INVESTOR_BONUS * 100)} % sur le prix de vos tokens, pour toujours).</p>`,
-    confirmText: 'Lever des fonds',
+    title: 'Raise funds?',
+    body: `<p>You sell your lab: cash, machines, customers, team, research and models all reset.</p>
+           <p>In exchange, <strong>${fmt(gain)} investors</strong> join you
+           (+${fmt(gain * INVESTOR_BONUS * 100)}% token price, forever).</p>`,
+    confirmText: 'Raise funds',
     onConfirm: () => {
       const next = newState();
       for (const key of ['labName', 'allTimeEarned', 'tokensProduced', 'tokensSold', 'playTime', 'buyMode']) {
@@ -340,29 +341,29 @@ function prestige() {
       save();
       syncControls();
       refreshPanel();
-      toast(`💼 ${fmt(gain)} investisseurs vous rejoignent !`);
+      toast(`💼 ${fmt(gain)} investors joined you!`);
     },
   });
 }
 
 function resetAll() {
   showModal({
-    title: 'Tout effacer ?',
-    body: '<p>Toute votre progression, y compris les investisseurs, sera définitivement supprimée.</p>',
-    confirmText: 'Tout effacer',
+    title: 'Wipe your save?',
+    body: '<p>All your progress, investors included, will be permanently deleted.</p>',
+    confirmText: 'Wipe everything',
     danger: true,
     onConfirm: () => {
       state = newState();
       save();
       syncControls();
       refreshPanel();
-      toast('Nouvelle partie commencée');
+      toast('New game started');
     },
   });
 }
 
 /* =====================================================================
-   BOUCLE DE JEU
+   GAME LOOP
    ===================================================================== */
 
 function tick(dt) {
@@ -375,7 +376,7 @@ function tick(dt) {
 
     s.progress += dt / cycleTime(b);
     if (s.progress >= 1) {
-      // Avec un ingénieur, on encaisse tous les cycles terminés pendant dt
+      // With an engineer, cash in every cycle completed during dt
       const cycles = s.manager ? Math.floor(s.progress) : 1;
       produce(tokensPerCycle(b) * cycles);
       if (s.manager) {
@@ -406,52 +407,52 @@ function applyOfflineEarnings() {
   train((produced - sold) * elapsed);
 
   const newModel = state.modelIndex > modelBefore
-    ? `<p>🧠 Votre équipe a aussi entraîné le modèle <strong>${MODELS[state.modelIndex].name}</strong> !</p>`
+    ? `<p>🧠 Your team also trained the <strong>${MODELS[state.modelIndex].name}</strong> model!</p>`
     : '';
   showModal({
-    title: 'Bon retour ! 👋',
-    body: `<p>Pendant votre absence (${fmtTime(elapsed)}), vos data centers ont produit
-           <strong>${fmt(produced * elapsed)} tokens</strong> et vous ont rapporté
+    title: 'Welcome back! 👋',
+    body: `<p>While you were away (${fmtTime(elapsed)}), your data centers produced
+           <strong>${fmt(produced * elapsed)} tokens</strong> and earned you
            <strong>${money(state.money - moneyBefore)}</strong>.</p>${newModel}`,
-    confirmText: 'Super !',
+    confirmText: 'Awesome!',
     hideCancel: true,
   });
 }
 
 /* =====================================================================
-   FORMATAGE
+   FORMATTING
    ===================================================================== */
 
-const SUFFIXES = ['', ' k', ' M', ' Md', ' Bn', ' Bd', ' Tn', ' Td', ' Qa', ' Qad', ' Qi', ' Qid'];
+const SUFFIXES = ['', 'K', 'M', 'B', 'T', 'Qa', 'Qi', 'Sx', 'Sp', 'Oc', 'No', 'Dc'];
 
 function fmt(n) {
   if (!isFinite(n)) return '∞';
   if (n < 1000) {
-    return n.toLocaleString('fr-FR', { maximumFractionDigits: n < 10 ? 2 : n < 100 ? 1 : 0 });
+    return n.toLocaleString('en-US', { maximumFractionDigits: n < 10 ? 2 : n < 100 ? 1 : 0 });
   }
   let e = Math.floor(Math.log10(n) / 3);
   let v = n / Math.pow(10, 3 * e);
   if (v >= 999.995) { e++; v /= 1000; }
-  if (e >= SUFFIXES.length) return n.toExponential(2).replace('.', ',');
-  return v.toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + SUFFIXES[e];
+  if (e >= SUFFIXES.length) return n.toExponential(2);
+  return v.toFixed(2) + SUFFIXES[e];
 }
 
-const money = n => `${fmt(n)} €`;
+const money = n => `$${fmt(n)}`;
 
 function fmtTime(sec) {
-  if (sec < 0.1) return '< 0,1 s';
-  if (sec < 10) return `${sec.toFixed(1).replace('.', ',')} s`;
+  if (sec < 0.1) return '< 0.1s';
+  if (sec < 10) return `${sec.toFixed(1)}s`;
   sec = Math.ceil(sec);
   const h = Math.floor(sec / 3600);
   const m = Math.floor((sec % 3600) / 60);
   const s = sec % 60;
-  if (h) return `${h} h ${String(m).padStart(2, '0')} min`;
-  if (m) return `${m} min ${String(s).padStart(2, '0')} s`;
-  return `${s} s`;
+  if (h) return `${h}h ${String(m).padStart(2, '0')}m`;
+  if (m) return `${m}m ${String(s).padStart(2, '0')}s`;
+  return `${s}s`;
 }
 
 /* =====================================================================
-   INTERFACE
+   USER INTERFACE
    ===================================================================== */
 
 const $ = sel => document.querySelector(sel);
@@ -476,7 +477,7 @@ function buildInfra() {
     const el = document.createElement('article');
     el.className = 'biz';
     el.innerHTML = `
-      <button class="biz-icon" type="button" aria-label="Lancer la production : ${b.name}">
+      <button class="biz-icon" type="button" aria-label="Start production: ${b.name}">
         <span>${b.icon}</span><span class="owned">0</span>
       </button>
       <div class="biz-main">
@@ -510,7 +511,7 @@ function buildInfra() {
 
 function buildPanel() {
   const clients = $('#tab-clients');
-  clients.innerHTML = '<p class="note">Vos clients achètent des tokens chaque seconde. Sans clients, vos tokens restent en stock.</p>';
+  clients.innerHTML = '<p class="note">Your customers buy tokens every second. Without customers, your tokens just pile up in stock.</p>';
   for (const c of CLIENTS) {
     const r = row(c.icon, '', '', () => buyClient(c));
     ui.clients[c.id] = r;
@@ -522,9 +523,9 @@ function buildPanel() {
   clients.appendChild(hint);
 
   const team = $('#tab-team');
-  team.innerHTML = '<p class="note">Un ingénieur SRE relance les machines automatiquement, même quand le jeu est fermé.</p>';
+  team.innerHTML = '<p class="note">An SRE engineer restarts machines automatically, even while the game is closed.</p>';
   for (const b of INFRA) {
-    const r = row(b.icon, `Ingénieur SRE : ${b.name}`, 'Automatise la production', () => hireManager(b));
+    const r = row(b.icon, `SRE engineer: ${b.name}`, 'Automates production', () => hireManager(b));
     ui.managers[b.id] = r;
     team.appendChild(r.row);
   }
@@ -542,7 +543,7 @@ function buildPanel() {
 function renderHeader() {
   $('#money').textContent = money(state.money);
   $('#mps').textContent = `${money(incomeRate)}/s`;
-  $('#price').textContent = `${money(price() * 1000)} / 1k`;
+  $('#price').textContent = `${money(price() * 1000)} / 1K`;
   $('#investors').textContent = fmt(state.investors);
 }
 
@@ -562,13 +563,13 @@ function renderControl() {
   let msg;
   let warn = true;
   if (fill > 0.98) {
-    msg = '📦 Stock plein : vos clients ne suivent plus. Le surplus part à l\'entraînement, mais trouvez de nouveaux clients !';
+    msg = '📦 Stock full: your customers can\'t keep up. The surplus goes to training, but go find more customers!';
   } else if (effective < demand * 0.8) {
-    msg = '⚡ Vos clients attendent : la demande dépasse votre production. Construisez de l\'infrastructure !';
+    msg = '⚡ Customers are waiting: demand exceeds your production. Build more infrastructure!';
   } else if (effective > demand * 1.5) {
-    msg = '🛒 Vous produisez plus que vous ne vendez : trouvez de nouveaux clients (onglet Clients).';
+    msg = '🛒 You produce more than you sell: find new customers (Customers tab).';
   } else {
-    msg = '✅ Production et demande sont bien équilibrées.';
+    msg = '✅ Production and demand are well balanced.';
     warn = false;
   }
   if (box.textContent !== msg) box.textContent = msg;
@@ -577,18 +578,18 @@ function renderControl() {
   const model = MODELS[state.modelIndex];
   const next = nextModel();
   $('#modelName').textContent = model.name;
-  $('#modelMult').textContent = `prix x${model.mult}`;
+  $('#modelMult').textContent = `price x${model.mult}`;
   if (next) {
     const pct = Math.min(1, state.training / next.cost);
-    $('#nextModel').textContent = `Prochain : ${next.name}`;
+    $('#nextModel').textContent = `Next: ${next.name}`;
     $('#trainBar').style.width = `${(pct * 100).toFixed(1)}%`;
     $('#trainText').textContent = `${fmt(state.training)} / ${fmt(next.cost)} tokens`;
   } else {
-    $('#nextModel').textContent = 'Modèle ultime atteint 🏆';
+    $('#nextModel').textContent = 'Ultimate model reached 🏆';
     $('#trainBar').style.width = '100%';
-    $('#trainText').textContent = 'Entraînement terminé';
+    $('#trainText').textContent = 'Training complete';
   }
-  $('#trainShareValue').textContent = `${Math.round(state.trainShare * 100)} %`;
+  $('#trainShareValue').textContent = `${Math.round(state.trainShare * 100)}%`;
 }
 
 function renderInfra() {
@@ -600,7 +601,7 @@ function renderInfra() {
     const r = ui.infra[b.id];
     const locked = s.owned === 0;
 
-    // On montre les machines possédées + la prochaine à débloquer
+    // Show owned machines + the next one to unlock
     const visible = !locked || lockedShown++ < 1;
     r.el.hidden = !visible;
     if (!visible) { lockedHidden++; continue; }
@@ -620,25 +621,25 @@ function renderInfra() {
 
     const n = purchaseCount(b, s.owned);
     const cost = costFor(b, s.owned, n);
-    r.buyLabel.textContent = locked ? 'Débloquer' : `Acheter x${n}`;
+    r.buyLabel.textContent = locked ? 'Unlock' : `Buy x${n}`;
     r.buyCost.textContent = money(cost);
     r.buy.disabled = cost > state.money;
 
     const next = MILESTONES.find(m => m > s.owned);
-    r.milestone.textContent = next ? `Palier ${s.owned}/${next} → vitesse x2` : 'Tous les paliers atteints 🏆';
+    r.milestone.textContent = next ? `Milestone ${s.owned}/${next} → speed x2` : 'All milestones reached 🏆';
 
     const idle = !locked && !s.running;
     r.icon.classList.toggle('idle', idle);
-    r.status.textContent = s.manager ? '👷 Automatisé' : idle ? '👆 Cliquez pour produire' : '';
+    r.status.textContent = s.manager ? '👷 Automated' : idle ? '👆 Click to produce' : '';
   }
 
   $('#lockedHint').textContent = lockedHidden
-    ? `🔒 ${lockedHidden} machine${lockedHidden > 1 ? 's' : ''} à découvrir…`
+    ? `🔒 ${lockedHidden} more machine${lockedHidden > 1 ? 's' : ''} to discover…`
     : '';
 }
 
 function refreshPanel() {
-  // Clients
+  // Customers
   let lockedShown = 0;
   let lockedHidden = 0;
   for (const c of CLIENTS) {
@@ -653,25 +654,25 @@ function refreshPanel() {
     const next = MILESTONES.find(m => m > s.owned);
     r.title.innerHTML = locked ? c.name : `${c.name} <span class="count">× ${fmt(s.owned)}</span>`;
     r.sub.textContent = locked
-      ? `+${fmt(c.demand * upgradeMult('clients', c.id))} tokens/s par client`
-      : `Achètent ${fmt(clientDemand(c))} tokens/s${next ? ` · palier ${s.owned}/${next}` : ''}`;
+      ? `+${fmt(c.demand * upgradeMult('clients', c.id))} tokens/s per customer`
+      : `Buying ${fmt(clientDemand(c))} tokens/s${next ? ` · milestone ${s.owned}/${next}` : ''}`;
 
     const n = purchaseCount(c, s.owned);
     const cost = costFor(c, s.owned, n);
-    r.btn.textContent = locked ? `Débloquer · ${money(cost)}` : `x${n} · ${money(cost)}`;
+    r.btn.textContent = locked ? `Unlock · ${money(cost)}` : `x${n} · ${money(cost)}`;
     r.btn.disabled = cost > state.money;
   }
   $('#clientsHint').textContent = lockedHidden
-    ? `🔒 ${lockedHidden} type${lockedHidden > 1 ? 's' : ''} de clients à découvrir…`
+    ? `🔒 ${lockedHidden} more customer type${lockedHidden > 1 ? 's' : ''} to discover…`
     : '';
 
-  // Équipe
+  // Team
   for (const b of INFRA) {
     const s = infraOf(b);
     const { row: el, btn } = ui.managers[b.id];
     el.classList.toggle('done', s.manager);
     if (s.manager) {
-      btn.textContent = 'Embauché ✓';
+      btn.textContent = 'Hired ✓';
       btn.disabled = true;
     } else {
       btn.textContent = s.owned ? money(b.managerCost) : `🔒 ${money(b.managerCost)}`;
@@ -679,7 +680,7 @@ function refreshPanel() {
     }
   }
 
-  // Recherche
+  // Research
   let shown = 0;
   for (const u of UPGRADES) {
     const { row: el, btn } = ui.upgrades[u.id];
@@ -689,17 +690,17 @@ function refreshPanel() {
     btn.disabled = state.money < u.cost;
   }
   $('#upgradeCount').textContent =
-    `${state.upgrades.length} / ${UPGRADES.length} recherches terminées. Elles multiplient votre production ou la demande.`;
+    `${state.upgrades.length} / ${UPGRADES.length} research projects completed. They multiply your production or demand.`;
 
-  // Levée de fonds
+  // Funding
   const claim = claimableInvestors();
   const nextAt = earningsForInvestors(totalInvestorsFor(state.allTimeEarned) + 1);
   $('#invCurrent').textContent = fmt(state.investors);
-  $('#invBonus').textContent = `+${fmt(state.investors * INVESTOR_BONUS * 100)} %`;
+  $('#invBonus').textContent = `+${fmt(state.investors * INVESTOR_BONUS * 100)}%`;
   $('#invClaimable').textContent = fmt(claim);
   $('#invNext').textContent = money(nextAt - state.allTimeEarned);
   $('#prestigeBtn').disabled = claim < 1;
-  $('#prestigeBtn').textContent = claim >= 1 ? `Lever des fonds (+${fmt(claim)} investisseurs)` : 'Lever des fonds';
+  $('#prestigeBtn').textContent = claim >= 1 ? `Raise funds (+${fmt(claim)} investors)` : 'Raise funds';
 
   // Stats
   let owned = 0;
@@ -715,7 +716,7 @@ function refreshPanel() {
   document.title = `${money(state.money)} · Token Tycoon`;
 }
 
-// Met les contrôles (curseur, nom, mode d'achat) en accord avec l'état
+// Sync controls (slider, lab name, buy mode) with the state
 function syncControls() {
   $('#trainShare').value = Math.round(state.trainShare * 100);
   $('#labInput').value = state.labName;
@@ -736,7 +737,7 @@ function toast(text) {
   setTimeout(() => el.remove(), 3000);
 }
 
-/* ---------- Fenêtre modale ---------- */
+/* ---------- Modal ---------- */
 
 let modalConfirm = null;
 
@@ -757,7 +758,7 @@ function closeModal() {
   modalConfirm = null;
 }
 
-/* ---------- Événements ---------- */
+/* ---------- Events ---------- */
 
 function bindEvents() {
   $('#buyMode').addEventListener('click', e => {
@@ -790,7 +791,7 @@ function bindEvents() {
 
   $('#prestigeBtn').addEventListener('click', prestige);
   $('#resetBtn').addEventListener('click', resetAll);
-  $('#saveBtn').addEventListener('click', () => { save(); toast('💾 Partie sauvegardée'); });
+  $('#saveBtn').addEventListener('click', () => { save(); toast('💾 Game saved'); });
 
   $('#modalConfirm').addEventListener('click', () => {
     const fn = modalConfirm;
@@ -806,7 +807,7 @@ function bindEvents() {
 }
 
 /* =====================================================================
-   DÉMARRAGE
+   STARTUP
    ===================================================================== */
 
 let lastFrame = performance.now();

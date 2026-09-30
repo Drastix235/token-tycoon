@@ -1,13 +1,13 @@
-# Système
+# OS
 .DS_Store
 Thumbs.db
 desktop.ini
 
-# Éditeurs
+# Editors
 .vscode/
 .idea/
 *.swp
 
-# Divers
+# Misc
 node_modules/
 *.log
